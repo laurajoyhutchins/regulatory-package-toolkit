@@ -112,10 +112,6 @@ fidelity, authorization, retention and rights review remain separate private
 data operations. A validated package is not a legal certification or license
 to redistribute regulatory content.
 
-## Native Rust model-code rule compiler
-
-The Rust-native `bcast-rust` CLI compiles **reviewed, source-pinned** rule IR into standalone, dependency-free Rust across independently identified code families and editions. Validation, lowering and evaluation semantics live in Rust; the existing Python BCAST package client is independent. No code text or interpretation is inferred. The same crate now admits bounded, source-identified SBVR-inspired proposal batches and composes admitted predicates with existing rules, with explicit unresolved accounting. See [Native Rust compiler](docs/rust-rule-transpiler.md), the [proposal schema](spec/schemas/sbvr-proposal-batch-0.1.0.schema.json) and the synthetic [three-edition fixture](examples/synthetic/reviewed-rules.json).
-
 ## Use the Python client
 
 The repository includes a thin, source-independent Python client for `bcast.package/0.1.0`. It reads local BCAST package JSON, validates the public schema and deterministic identity/structure invariants, retrieves canonical object records, and lists direct structural children. It does not contact source providers, acquire licensed material, invoke private compiler services, or require the proprietary BCAST corpus.
