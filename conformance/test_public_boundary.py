@@ -19,7 +19,6 @@ class PublicBoundaryTests(unittest.TestCase):
                     ".github/workflows/conformance.yml",
                     "README.md",
                     "conformance/check_public_boundary.py",
-                    "crates/bcast-rules/src/lib.rs",
                     "docs/product-boundary.md",
                     "examples/synthetic/README.md",
                     "examples/synthetic/valid/package-0.1.0.json",
@@ -35,7 +34,6 @@ class PublicBoundaryTests(unittest.TestCase):
     def test_private_implementation_and_data_shapes_are_rejected(self):
         paths = [
             "compiler/build.py",
-            "crates/private-adapter/src/lib.rs",
             "providers/icc.py",
             "corpus/raw.pdf",
             "data/corpus.parquet",

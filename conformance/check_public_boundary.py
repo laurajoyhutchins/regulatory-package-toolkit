@@ -9,7 +9,6 @@ _ALLOWED_TOP_LEVEL_DIRECTORIES = frozenset(
     {
         ".github",
         "conformance",
-        "crates",
         "docs",
         "examples",
         "spec",
@@ -44,8 +43,6 @@ def boundary_violations(paths: Iterable[str]) -> list[str]:
         parts = PurePosixPath(raw).parts
         if len(parts) > 1 and parts[0] not in _ALLOWED_TOP_LEVEL_DIRECTORIES:
             violations.append(f"{raw}: unexpected top-level directory {parts[0]!r}")
-        if parts and parts[0] == "crates" and (len(parts) < 3 or parts[1] != "bcast-rules"):
-            violations.append(f"{raw}: only the public bcast-rules crate is admitted")
         if parts and parts[0] == "examples" and (len(parts) < 2 or parts[1] != "synthetic"):
             violations.append(f"{raw}: public examples must live under examples/synthetic/")
         if raw.lower().endswith(_FORBIDDEN_ARTIFACT_SUFFIXES):

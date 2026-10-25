@@ -51,9 +51,5 @@ jobs:
           python-version: "3.12"
       - name: Install public client, conformance and pinned lint tools
         run: python -m pip install --disable-pip-version-check -e '.[dev]' -r conformance/requirements.txt
-      - name: Install native Rust compiler toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Test Rust rule compiler and generated evaluation conformance
-        run: cargo test --manifest-path crates/bcast-rules/Cargo.toml
       - name: Run repository lint, conformance, clients and synthetic contracts
         run: python tools/check.py
