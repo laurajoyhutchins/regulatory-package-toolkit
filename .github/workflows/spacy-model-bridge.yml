@@ -1,0 +1,27 @@
+name: Temporary spaCy 3.8 English parsing model bridge
+on:
+  push:
+    branches: [agent/gliner25-checkpoint-bridge-20261024]
+    paths: [.github/workflows/spacy-model-bridge.yml]
+permissions:
+  contents: read
+jobs:
+  fetch-spacy-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Download public spaCy English parser wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p transfer
+          curl -fsSL --retry 3 --max-time 180 \
+            https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl \
+            -o transfer/en_core_web_sm-3.8.0-py3-none-any.whl
+          echo '1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85  transfer/en_core_web_sm-3.8.0-py3-none-any.whl' | sha256sum -c -
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spacy-english-parser-model-3-8-0
+          path: transfer/en_core_web_sm-3.8.0-py3-none-any.whl
+          retention-days: 1
+          if-no-files-found: error
