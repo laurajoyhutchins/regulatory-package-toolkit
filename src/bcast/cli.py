@@ -31,6 +31,16 @@ def _parser() -> argparse.ArgumentParser:
     tree = subparsers.add_parser("tree", help="Print the local public structural tree")
     tree.add_argument("package")
 
+    review = subparsers.add_parser(
+        "review", help="Review publication structure and representation gaps in one command"
+    )
+    review.add_argument("package")
+
+    find = subparsers.add_parser("find", help="Retrieve an object by kind and locator")
+    find.add_argument("package")
+    find.add_argument("kind")
+    find.add_argument("locator")
+
     serve = subparsers.add_parser(
         "serve", help="Serve validated local packages through bcast.api/0.1.0"
     )
@@ -66,17 +76,42 @@ def _print_json(value) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2))
 
 
-def _print_tree(package: BcastPackage) -> None:
+def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:
     # Explicit stack avoids RecursionError on valid deeply nested publications.
     pending = [(root, 0) for root in reversed(package.roots())]
     while pending:
         record, depth = pending.pop()
         label = record.get("label")
         suffix = f" {label}" if label else ""
-        print(f"{'  ' * depth}{record['kind']} {record['locator']}{suffix}")
+        status = f"[{record['status']}] " if show_status else ""
+        print(f"{'  ' * depth}{status}{record['kind']} {record['locator']}{suffix}")
         pending.extend(
             (child, depth + 1) for child in reversed(package.children(record["object_id"]))
         )
+
+
+def _print_review(package: BcastPackage) -> None:
+    metadata = package.metadata()
+    publication = metadata["publication"]
+    records = package.as_dict()["objects"]
+    counts = {status: 0 for status in ("resolved", "unresolved", "unsupported")}
+    for record in records:
+        counts[record["status"]] += 1
+
+    print("BCAST local package review (representation only)")
+    print(f"Publication: {publication.get('title') or publication['family']}")
+    print(f"Edition: {publication['edition']}")
+    print(f"Contract: {package.schema_version}")
+    print(f"Package ID: {package.package_id}")
+    print(
+        f"Objects: {len(records)} | resolved: {counts['resolved']}"
+        f" | unresolved: {counts['unresolved']}"
+        f" | unsupported: {counts['unsupported']}"
+    )
+    print("Hierarchy (status / kind / locator / label):")
+    _print_tree(package, show_status=True)
+    print("Status describes representation availability, not source fidelity, legal")
+    print("applicability, professional verification, or engineering approval.")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -111,6 +146,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             _print_json(package.children(args.object_id))
         elif args.command == "tree":
             _print_tree(package)
+        elif args.command == "review":
+            _print_review(package)
+        elif args.command == "find":
+            _print_json(package.find(args.kind, args.locator))
         return 0
     except (
         PackageValidationError,
