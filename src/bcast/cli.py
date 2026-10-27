@@ -69,11 +69,27 @@ def _parser() -> argparse.ArgumentParser:
     api_children = api_subparsers.add_parser("children", help="List direct structural children")
     api_children.add_argument("package_id")
     api_children.add_argument("object_id")
+
+    api_review = api_subparsers.add_parser(
+        "review", help="Review a full remotely served package after identity validation"
+    )
+    api_review.add_argument("package_id")
     return parser
 
 
 def _print_json(value) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2))
+
+
+def _safe_label(value: str) -> str:
+    """Keep untrusted publication text on one terminal line, never execute controls."""
+    encoded = json.dumps(value, ensure_ascii=False)[1:-1]
+    return "".join(
+        f"\\u{ord(character):04x}"
+        if 0x7F <= ord(character) <= 0x9F or character in ("\u2028", "\u2029")
+        else character
+        for character in encoded
+    )
 
 
 def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:
@@ -82,15 +98,16 @@ def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:
     while pending:
         record, depth = pending.pop()
         label = record.get("label")
-        suffix = f" {label}" if label else ""
+        suffix = f" {_safe_label(label) if show_status else label}" if label else ""
         status = f"[{record['status']}] " if show_status else ""
-        print(f"{'  ' * depth}{status}{record['kind']} {record['locator']}{suffix}")
+        locator = _safe_label(record["locator"]) if show_status else record["locator"]
+        print(f"{'  ' * depth}{status}{record['kind']} {locator}{suffix}")
         pending.extend(
             (child, depth + 1) for child in reversed(package.children(record["object_id"]))
         )
 
 
-def _print_review(package: BcastPackage) -> None:
+def _print_review(package: BcastPackage, *, source: str = "local") -> None:
     metadata = package.metadata()
     publication = metadata["publication"]
     records = package.as_dict()["objects"]
@@ -98,9 +115,9 @@ def _print_review(package: BcastPackage) -> None:
     for record in records:
         counts[record["status"]] += 1
 
-    print("BCAST local package review (representation only)")
-    print(f"Publication: {publication.get('title') or publication['family']}")
-    print(f"Edition: {publication['edition']}")
+    print(f"BCAST {source} package review (representation only)")
+    print(f"Publication: {_safe_label(publication.get('title') or publication['family'])}")
+    print(f"Edition: {_safe_label(publication['edition'])}")
     print(f"Contract: {package.schema_version}")
     print(f"Package ID: {package.package_id}")
     print(
@@ -135,6 +152,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _print_json(client.get_object(args.package_id, args.object_id))
             elif args.api_command == "children":
                 _print_json(client.get_children(args.package_id, args.object_id))
+            elif args.api_command == "review":
+                _print_review(
+                    BcastPackage.from_mapping(client.get_package(args.package_id)), source="remote"
+                )
             return 0
 
         package = BcastPackage.load(args.package)
