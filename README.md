@@ -152,6 +152,23 @@ not legal completeness, source-text correspondence, rights, jurisdictional
 applicability, engineering approval, or verified regulatory interpretation.
 An unresolved or unsupported record remains visible, not implicitly accepted.
 
+In a pipeline that needs to **stop on representation gaps**, opt in to the
+distinct attention exit code:
+
+```bash
+bcast review publication.json --require-resolved
+bcast api http://127.0.0.1:8001 --package-contract bcast.package/0.2.0 \\
+  review PACKAGE_ID --require-resolved
+```
+
+The default remains exit 0 for any *valid* package regardless of gaps, preserving
+legacy callers. The optional gate prints the **complete same report** and exits
+`2` if one or more objects has `unresolved` or `unsupported` status. Invalid
+input, missing coordinates and remote contract/digest failures remain exit `1`.
+Exit `0` with this flag means only **no declared representation gaps**; it
+does not establish publication completeness against originals, legal applicability,
+source fidelity, or professional review.
+
 The client is an implementation of the public contract, not a compatibility layer for alpha Python classes, CLI commands, internal schemas, or generated artifacts.
 
 ### Exercise the read-only API locally
