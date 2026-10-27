@@ -356,6 +356,36 @@ class LocalReviewJourneyTests(unittest.TestCase):
         self.assertEqual("", out)
         self.assertIn("kind=section locator=not-there", err)
 
+    def test_error_diagnostics_escape_hostile_coordinate_and_preserve_clean_output(self):
+        path = FIXTURES / "package-0.2.0.json"
+        hostile_locator = "absent\\n[resolved] forged\\r\\x1b[2J"
+        code, out, err = run_cli("find", str(path), "section", hostile_locator)
+        self.assertEqual((1, ""), (code, out))
+        self.assertEqual(1, len(err.splitlines()))
+        self.assertIn(r"absent\\n[resolved] forged\\r\\u001b[2J", err)
+        self.assertNotIn("\\x1b", err)
+        self.assertNotIn("\\r", err)
+
+        code, out, err = run_cli("find", str(path), "section", "not-there")
+        self.assertEqual((1, ""), (code, out))
+        self.assertEqual(
+            "ERROR BCAST object not found: kind=section locator=not-there\\n",
+            err,
+        )
+
+    @unittest.skipIf(__import__("os").name == "nt", "Windows disallows control characters in filenames")
+    def test_validate_escapes_control_characters_in_real_filename(self):
+        fixture = (FIXTURES / "package-0.2.0.json").read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "package\\nOK forged\\r\\x1b[2J.json"
+            path.write_text(fixture, encoding="utf-8")
+            code, out, err = run_cli("validate", str(path))
+        self.assertEqual((0, ""), (code, err))
+        self.assertEqual(1, len(out.splitlines()))
+        self.assertIn(r"package\\nOK forged\\r\\u001b[2J.json", out)
+        self.assertNotIn("\\r", out)
+        self.assertNotIn("\\x1b", out)
+
     def test_existing_tree_command_remains_unchanged(self):
         path = FIXTURES / "package-0.1.0.json"
         code, out, err = run_cli("tree", str(path))
