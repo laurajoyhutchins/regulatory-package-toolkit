@@ -196,7 +196,15 @@ With the synthetic local reference server running on port 8001 as above:
 ```bash
 bcast api http://127.0.0.1:8001 --package-contract bcast.package/0.2.0 \\
   review bcastpkg:sha256:efa6bd60029237e6a175a2893c10c72abfcbde8149ef2270e6cd3d3fc6a87819
+# Inspect the public section shown in that review, without locating its hash:
+bcast api http://127.0.0.1:8001 --package-contract bcast.package/0.2.0 \\
+  find bcastpkg:sha256:efa6bd60029237e6a175a2893c10c72abfcbde8149ef2270e6cd3d3fc6a87819 section 1.1
 ```
+
+Both `api review` and `api find` first retrieve and validate the same full public
+package response; `api find` then uses its canonical `(kind, locator)` index.
+The server only needs its existing read-only package endpoint; no new REST route
+or private provider adapter is introduced.
 
 A 0.2.0 review checks the full package materialization digest, not just a metadata
 claim. The legacy 0.1.0 version has a different, non-content-addressed package

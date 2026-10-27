@@ -74,6 +74,13 @@ def _parser() -> argparse.ArgumentParser:
         "review", help="Review a full remotely served package after identity validation"
     )
     api_review.add_argument("package_id")
+
+    api_find = api_subparsers.add_parser(
+        "find", help="Retrieve a served object by kind and locator after package validation"
+    )
+    api_find.add_argument("package_id")
+    api_find.add_argument("kind")
+    api_find.add_argument("locator")
     return parser
 
 
@@ -156,6 +163,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _print_review(
                     BcastPackage.from_mapping(client.get_package(args.package_id)), source="remote"
                 )
+            elif args.api_command == "find":
+                package = BcastPackage.from_mapping(client.get_package(args.package_id))
+                _print_json(package.find(args.kind, args.locator))
             return 0
 
         package = BcastPackage.load(args.package)
