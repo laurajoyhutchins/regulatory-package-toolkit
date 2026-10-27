@@ -260,9 +260,9 @@ class LocalReviewJourneyTests(unittest.TestCase):
         self.assertIn("[unresolved] section", report)
 
     def test_untrusted_validated_package_cannot_forge_tree_or_review_lines(self):
-        locator = "A\\n[resolved] forged\\x1b[2J"
-        label = "Needs review\\rObjects: 0\\u202e[resolved] forged"
-        title = "Fictional\\u0085[resolved] forged\\u2066"
+        locator = "A\n[resolved] forged\x1b[2J"
+        label = "Needs review\rObjects: 0\u202e[resolved] forged"
+        title = "Fictional\u0085[resolved] forged\u2066"
         package = BcastPackage.from_mapping(
             build_package_v2(
                 publication={
@@ -291,20 +291,19 @@ class LocalReviewJourneyTests(unittest.TestCase):
             review_code, review, review_err = run_cli("review", str(path))
             find_code, found, find_err = run_cli("find", str(path), "section", locator)
 
-        self.assertEqual((0, "", 0, "", 0, ""), (
-            tree_code, tree_err, review_code, review_err, find_code, find_err
-        ))
+        self.assertEqual(
+            (0, "", 0, "", 0, ""),
+            (tree_code, tree_err, review_code, review_err, find_code, find_err),
+        )
         self.assertEqual(2, len(tree.splitlines()))
         self.assertEqual(1, sum("section " in line for line in tree.splitlines()))
-        self.assertIn(r"\\n[resolved] forged\\u001b[2J", tree)
-        self.assertIn(r"\\rObjects: 0\\u202e[resolved] forged", tree)
-        self.assertIn(r"\\u0085[resolved] forged\\u2066", review)
+        self.assertIn(r"\n[resolved] forged\u001b[2J", tree)
+        self.assertIn(r"\rObjects: 0\u202e[resolved] forged", tree)
+        self.assertIn(r"\u0085[resolved] forged\u2066", review)
         self.assertEqual(1, review.count("Objects: 2 | resolved: 1 | unresolved: 1"))
         for output in (tree, review):
-            for control in ("\\n[resolved] forged", "\\r", "\\x1b", "\\u0085", "\\u202e", "\\u2066"):
-                # The user-supplied controls must be escaped, not executed.
-                if control != "\\n[resolved] forged":
-                    self.assertNotIn(control, output)
+            for control in ("\r", "\x1b", "\u0085", "\u202e", "\u2066"):
+                self.assertNotIn(control, output)
         self.assertEqual(locator, json.loads(found)["locator"])
         self.assertEqual(label, json.loads(found)["label"])
 
