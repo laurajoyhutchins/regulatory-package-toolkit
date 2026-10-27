@@ -357,7 +357,7 @@ class LocalReviewJourneyTests(unittest.TestCase):
         self.assertEqual("", out)
         self.assertIn("kind=section locator=not-there", err)
 
-    def test_error_diagnostics_escape_hostile_coordinate_and_preserve_clean_output(self):
+    def test_error_diagnostics_escape_hostile_coordinate(self):
         path = FIXTURES / "package-0.2.0.json"
         hostile_locator = "absent\n[resolved] forged\r\x1b[2J"
         code, out, err = run_cli("find", str(path), "section", hostile_locator)
@@ -374,9 +374,7 @@ class LocalReviewJourneyTests(unittest.TestCase):
             err,
         )
 
-    @unittest.skipIf(
-        os.name == "nt", "Windows disallows control characters in filenames"
-    )
+    @unittest.skipIf(os.name == "nt", "Windows filename restrictions")
     def test_validate_escapes_control_characters_in_real_filename(self):
         fixture = (FIXTURES / "package-0.2.0.json").read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as directory:
