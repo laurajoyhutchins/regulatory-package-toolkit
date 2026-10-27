@@ -259,6 +259,55 @@ class LocalReviewJourneyTests(unittest.TestCase):
         self.assertIn(r"\rObjects: 0", report)
         self.assertIn("[unresolved] section", report)
 
+    def test_untrusted_validated_package_cannot_forge_tree_or_review_lines(self):
+        locator = "A\\n[resolved] forged\\x1b[2J"
+        label = "Needs review\\rObjects: 0\\u202e[resolved] forged"
+        title = "Fictional\\u0085[resolved] forged\\u2066"
+        package = BcastPackage.from_mapping(
+            build_package_v2(
+                publication={
+                    "namespace": "codes.example",
+                    "family": "display-safety-test",
+                    "edition": "2026",
+                    "title": title,
+                },
+                package_version="synthetic.1",
+                objects=[
+                    {"kind": "document", "locator": "root", "status": "resolved"},
+                    {
+                        "kind": "section",
+                        "locator": locator,
+                        "parent": {"kind": "document", "locator": "root"},
+                        "status": "unresolved",
+                        "label": label,
+                    },
+                ],
+            )
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "package.json"
+            path.write_text(json.dumps(package.as_dict()), encoding="utf-8")
+            tree_code, tree, tree_err = run_cli("tree", str(path))
+            review_code, review, review_err = run_cli("review", str(path))
+            find_code, found, find_err = run_cli("find", str(path), "section", locator)
+
+        self.assertEqual((0, "", 0, "", 0, ""), (
+            tree_code, tree_err, review_code, review_err, find_code, find_err
+        ))
+        self.assertEqual(2, len(tree.splitlines()))
+        self.assertEqual(1, sum("section " in line for line in tree.splitlines()))
+        self.assertIn(r"\\n[resolved] forged\\u001b[2J", tree)
+        self.assertIn(r"\\rObjects: 0\\u202e[resolved] forged", tree)
+        self.assertIn(r"\\u0085[resolved] forged\\u2066", review)
+        self.assertEqual(1, review.count("Objects: 2 | resolved: 1 | unresolved: 1"))
+        for output in (tree, review):
+            for control in ("\\n[resolved] forged", "\\r", "\\x1b", "\\u0085", "\\u202e", "\\u2066"):
+                # The user-supplied controls must be escaped, not executed.
+                if control != "\\n[resolved] forged":
+                    self.assertNotIn(control, output)
+        self.assertEqual(locator, json.loads(found)["locator"])
+        self.assertEqual(label, json.loads(found)["label"])
+
     def test_both_real_package_contracts_work_without_specifying_version(self):
         for version in ("0.1.0", "0.2.0"):
             with self.subTest(version=version):
