@@ -30,7 +30,6 @@ def run_cli(*arguments: str) -> tuple[int, str, str]:
     return exit_code, out.getvalue(), err.getvalue()
 
 
-
 @contextmanager
 def reference_server(package: BcastPackage):
     server = make_server(
@@ -71,9 +70,7 @@ def hostile_json_server(payload):
         server.server_close()
 
 
-
 class LocalReviewJourneyTests(unittest.TestCase):
-
     def test_remote_reference_api_preserves_local_report_under_both_contracts(self):
         for version in ("0.1.0", "0.2.0"):
             with self.subTest(version=version):
