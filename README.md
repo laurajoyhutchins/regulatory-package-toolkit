@@ -128,6 +128,30 @@ bcast children examples/synthetic/valid/package-0.1.0.json \
   bcastobj:sha256:9b9dab8a4909cb09bd2a2b454a09949a6b30f7f69a8883d0137859e06baa73f8
 ```
 
+### Review a package without copying internal IDs
+
+An engineer can start with a local, already-built package and inspect its
+available regulatory structure and explicit representation gaps in one step:
+
+```bash
+bcast review examples/synthetic/valid/package-0.2.0.json
+bcast find examples/synthetic/valid/package-0.2.0.json section 1.1
+```
+
+`review` validates the package before displaying its public publication
+metadata, exact package identity, counts of resolved/unresolved/unsupported
+objects, and a structural outline with each object's status. `find` retrieves
+a validated object by the visible `kind` and `locator` pair so the user
+does not have to copy its content-addressed `object_id`. Both commands work
+with maintained package contracts 0.1.0 and 0.2.0, require no external service
+or AI, and do not rewrite the package. Existing `tree`, `get`, `children`
+and version-explicit HTTP API behavior are unchanged.
+
+**Important:** The three status values describe *representation availability*,
+not legal completeness, source-text correspondence, rights, jurisdictional
+applicability, engineering approval, or verified regulatory interpretation.
+An unresolved or unsupported record remains visible, not implicitly accepted.
+
 The client is an implementation of the public contract, not a compatibility layer for alpha Python classes, CLI commands, internal schemas, or generated artifacts.
 
 ### Exercise the read-only API locally
