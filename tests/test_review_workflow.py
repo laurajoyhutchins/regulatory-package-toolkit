@@ -94,6 +94,58 @@ class LocalReviewJourneyTests(unittest.TestCase):
                     remote,
                 )
 
+    def test_remote_coordinate_lookup_reuses_full_validation_for_both_contracts(self):
+        for version in ("0.1.0", "0.2.0"):
+            with self.subTest(version=version):
+                package = BcastPackage.load(FIXTURES / f"package-{version}.json")
+                with reference_server(package) as base_url:
+                    code, response, err = run_cli(
+                        "api",
+                        base_url,
+                        "--package-contract",
+                        package.schema_version,
+                        "find",
+                        package.package_id,
+                        "section",
+                        "1.1",
+                    )
+                self.assertEqual((0, ""), (code, err))
+                self.assertEqual(package.find("section", "1.1"), json.loads(response))
+
+    def test_remote_coordinate_lookup_fails_closed_on_missing_and_corrupt_data(self):
+        package = BcastPackage.load(FIXTURES / "package-0.2.0.json")
+        with reference_server(package) as base_url:
+            code, response, err = run_cli(
+                "api",
+                base_url,
+                "--package-contract",
+                package.schema_version,
+                "find",
+                package.package_id,
+                "section",
+                "not-a-section",
+            )
+            self.assertEqual(1, code)
+            self.assertEqual("", response)
+            self.assertIn("kind=section locator=not-a-section", err)
+
+        corrupted = package.as_dict()
+        corrupted["objects"][1]["status"] = "unsupported"
+        with hostile_json_server(corrupted) as base_url:
+            code, response, err = run_cli(
+                "api",
+                base_url,
+                "--package-contract",
+                package.schema_version,
+                "find",
+                package.package_id,
+                "section",
+                "1.1",
+            )
+        self.assertEqual(1, code)
+        self.assertEqual("", response)
+        self.assertIn("public BCAST contract", err)
+
     def test_remote_corrupt_full_materialization_fails_before_printing_review(self):
         original = BcastPackage.load(FIXTURES / "package-0.2.0.json")
         forged = original.as_dict()
