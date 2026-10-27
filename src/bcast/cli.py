@@ -115,9 +115,9 @@ def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:
     while pending:
         record, depth = pending.pop()
         label = record.get("label")
-        suffix = f" {_safe_label(label) if show_status else label}" if label else ""
+        suffix = f" {_safe_label(label)}" if label else ""
         status = f"[{record['status']}] " if show_status else ""
-        locator = _safe_label(record["locator"]) if show_status else record["locator"]
+        locator = _safe_label(record["locator"])
         print(f"{'  ' * depth}{status}{record['kind']} {locator}{suffix}")
         pending.extend(
             (child, depth + 1) for child in reversed(package.children(record["object_id"]))
