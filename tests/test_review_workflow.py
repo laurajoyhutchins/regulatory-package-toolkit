@@ -89,7 +89,9 @@ class LocalReviewJourneyTests(unittest.TestCase):
             code, record, err = run_cli("find", str(path), "section", "B")
             self.assertEqual((0, ""), (code, err))
             self.assertEqual("unsupported", json.loads(record)["status"])
-            expected = next(item["object_id"] for item in package["objects"] if item["locator"] == "B")
+            expected = next(
+                item["object_id"] for item in package["objects"] if item["locator"] == "B"
+            )
             self.assertEqual(expected, json.loads(record)["object_id"])
 
     def test_broken_materialization_fails_closed_without_review_output(self):
