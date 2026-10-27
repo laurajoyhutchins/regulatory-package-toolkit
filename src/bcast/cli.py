@@ -35,6 +35,11 @@ def _parser() -> argparse.ArgumentParser:
         "review", help="Review publication structure and representation gaps in one command"
     )
     review.add_argument("package")
+    review.add_argument(
+        "--require-resolved",
+        action="store_true",
+        help="Exit 2 for representation gaps, not regulatory or engineering approval",
+    )
 
     find = subparsers.add_parser("find", help="Retrieve an object by kind and locator")
     find.add_argument("package")
@@ -74,6 +79,11 @@ def _parser() -> argparse.ArgumentParser:
         "review", help="Review a full remotely served package after identity validation"
     )
     api_review.add_argument("package_id")
+    api_review.add_argument(
+        "--require-resolved",
+        action="store_true",
+        help="Exit 2 for representation gaps, not regulatory or engineering approval",
+    )
 
     api_find = api_subparsers.add_parser(
         "find", help="Retrieve a served object by kind and locator after package validation"
@@ -114,7 +124,7 @@ def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:
         )
 
 
-def _print_review(package: BcastPackage, *, source: str = "local") -> None:
+def _print_review(package: BcastPackage, *, source: str = "local") -> bool:
     metadata = package.metadata()
     publication = metadata["publication"]
     records = package.as_dict()["objects"]
@@ -136,6 +146,7 @@ def _print_review(package: BcastPackage, *, source: str = "local") -> None:
     _print_tree(package, show_status=True)
     print("Status describes representation availability, not source fidelity, legal")
     print("applicability, professional verification, or engineering approval.")
+    return bool(counts["unresolved"] or counts["unsupported"])
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -160,9 +171,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             elif args.api_command == "children":
                 _print_json(client.get_children(args.package_id, args.object_id))
             elif args.api_command == "review":
-                _print_review(
+                gaps = _print_review(
                     BcastPackage.from_mapping(client.get_package(args.package_id)), source="remote"
                 )
+                if args.require_resolved and gaps:
+                    return 2
             elif args.api_command == "find":
                 package = BcastPackage.from_mapping(client.get_package(args.package_id))
                 _print_json(package.find(args.kind, args.locator))
@@ -178,7 +191,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "tree":
             _print_tree(package)
         elif args.command == "review":
-            _print_review(package)
+            gaps = _print_review(package)
+            if args.require_resolved and gaps:
+                return 2
         elif args.command == "find":
             _print_json(package.find(args.kind, args.locator))
         return 0

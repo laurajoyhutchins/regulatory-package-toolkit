@@ -71,6 +71,61 @@ def hostile_json_server(payload):
 
 
 class LocalReviewJourneyTests(unittest.TestCase):
+    def test_explicit_resolved_gate_preserves_legacy_success_for_complete_packages(self):
+        for version in ("0.1.0", "0.2.0"):
+            with self.subTest(version=version):
+                path = FIXTURES / f"package-{version}.json"
+                code, report, err = run_cli("review", str(path), "--require-resolved")
+                self.assertEqual((0, ""), (code, err))
+                self.assertIn("unresolved: 0 | unsupported: 0", report)
+
+    def test_opt_in_gate_exits_attention_on_real_validated_representation_gaps(self):
+        for gap in ("unresolved", "unsupported"):
+            with self.subTest(gap=gap):
+                package = BcastPackage.from_mapping(
+                    build_package_v2(
+                        publication={
+                            "namespace": "codes.example",
+                            "family": "gap-attention-test",
+                            "edition": "2026",
+                        },
+                        package_version="synthetic.1",
+                        objects=[
+                            {"kind": "document", "locator": "root", "status": "resolved"},
+                            {
+                                "kind": "section",
+                                "locator": "1.1",
+                                "parent": {"kind": "document", "locator": "root"},
+                                "status": gap,
+                            },
+                        ],
+                    )
+                )
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / "package.json"
+                    path.write_text(json.dumps(package.as_dict()), encoding="utf-8")
+                    ordinary, ordinary_report, err = run_cli("review", str(path))
+                    gated, gated_report, gated_err = run_cli(
+                        "review", str(path), "--require-resolved"
+                    )
+                self.assertEqual((0, ""), (ordinary, err))
+                self.assertEqual((2, ""), (gated, gated_err))
+                self.assertEqual(ordinary_report, gated_report)
+                self.assertIn(f"[{gap}] section 1.1", gated_report)
+                self.assertIn("not source fidelity", gated_report)
+                with reference_server(package) as base_url:
+                    remote, output, err = run_cli(
+                        "api",
+                        base_url,
+                        "--package-contract",
+                        package.schema_version,
+                        "review",
+                        package.package_id,
+                        "--require-resolved",
+                    )
+                self.assertEqual((2, ""), (remote, err))
+                self.assertIn(f"[{gap}] section 1.1", output)
+
     def test_remote_reference_api_preserves_local_report_under_both_contracts(self):
         for version in ("0.1.0", "0.2.0"):
             with self.subTest(version=version):
