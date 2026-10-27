@@ -89,12 +89,11 @@ class LocalReviewJourneyTests(unittest.TestCase):
             code, record, err = run_cli("find", str(path), "section", "B")
             self.assertEqual((0, ""), (code, err))
             self.assertEqual("unsupported", json.loads(record)["status"])
-            self.assertEqual(next(item["object_id"] for item in package["objects"] if item["locator"] == "B"), json.loads(record)["object_id"])
+            expected = next(item["object_id"] for item in package["objects"] if item["locator"] == "B")
+            self.assertEqual(expected, json.loads(record)["object_id"])
 
     def test_broken_materialization_fails_closed_without_review_output(self):
-        package = json.loads(
-            (FIXTURES / "package-0.2.0.json").read_text(encoding="utf-8")
-        )
+        package = json.loads((FIXTURES / "package-0.2.0.json").read_text(encoding="utf-8"))
         package["objects"][1]["status"] = "unresolved"  # Digest is now invalid.
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "modified.json"
