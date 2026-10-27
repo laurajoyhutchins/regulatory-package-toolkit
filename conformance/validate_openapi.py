@@ -36,10 +36,11 @@ def _resolve_reference(source: Path, reference: str, root: Path) -> None:
     if not target.is_relative_to(root.resolve()) or not target.is_file():
         raise ValueError(f"missing or out-of-tree reference target: {reference}")
     try:
-        value = json.loads(target.read_text(encoding="utf-8"))
+        document = json.loads(target.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"unreadable reference target: {reference}") from exc
 
+    value = document
     pointer = unquote(parts.fragment)
     if pointer and not pointer.startswith("/"):
         raise ValueError(f"unsupported JSON reference fragment: {reference}")
@@ -54,8 +55,7 @@ def _resolve_reference(source: Path, reference: str, root: Path) -> None:
 
     # The external documents are ordinary JSON Schemas, not arbitrary files.
     if target != source:
-        schema = json.loads(target.read_text(encoding="utf-8"))
-        Draft202012Validator.check_schema(schema)
+        Draft202012Validator.check_schema(document)
 
 
 def validate_openapi_document(document: dict[str, Any], source: Path) -> None:
