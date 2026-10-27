@@ -36,7 +36,8 @@ def _parser() -> argparse.ArgumentParser:
     )
     review.add_argument("package")
     review.add_argument(
-        "--require-resolved", action="store_true",
+        "--require-resolved",
+        action="store_true",
         help="Exit 2 for representation gaps, not regulatory or engineering approval",
     )
 
@@ -79,7 +80,8 @@ def _parser() -> argparse.ArgumentParser:
     )
     api_review.add_argument("package_id")
     api_review.add_argument(
-        "--require-resolved", action="store_true",
+        "--require-resolved",
+        action="store_true",
         help="Exit 2 for representation gaps, not regulatory or engineering approval",
     )
 
