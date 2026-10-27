@@ -183,7 +183,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         package = BcastPackage.load(args.package)
         if args.command == "validate":
-            print(f"OK {args.package}")
+            print(f"OK {_safe_label(args.package)}")
         elif args.command == "get":
             _print_json(package.get_object(args.object_id))
         elif args.command == "children":
@@ -205,5 +205,5 @@ def main(argv: Sequence[str] | None = None) -> int:
         OSError,
         json.JSONDecodeError,
     ) as exc:
-        print(f"ERROR {exc}", file=sys.stderr)
+        print(f"ERROR {_safe_label(str(exc))}", file=sys.stderr)
         return 1
