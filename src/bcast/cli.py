@@ -101,12 +101,16 @@ def _print_json(value) -> None:
 def _safe_label(value: str) -> str:
     """Keep untrusted publication text on one terminal line, never execute controls."""
     encoded = json.dumps(value, ensure_ascii=False)[1:-1]
-    return "".join(
-        f"\\u{ord(character):04x}"
-        if 0x7F <= ord(character) <= 0x9F or character in ("\u2028", "\u2029")
-        else character
-        for character in encoded
-    )
+    # JSON already escapes C0/ASCII controls. Keep readable international
+    # text, but escape remaining nonprintable Unicode formatting controls,
+    # including bidi overrides and isolates that can reorder terminal output.
+    parts: list[str] = []
+    for character in encoded:
+        if character.isprintable():
+            parts.append(character)
+        else:
+            parts.append(json.dumps(character, ensure_ascii=True)[1:-1])
+    return "".join(parts)
 
 
 def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:

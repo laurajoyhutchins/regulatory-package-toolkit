@@ -273,6 +273,60 @@ class LocalReviewJourneyTests(unittest.TestCase):
         self.assertIn(r"\rObjects: 0", report)
         self.assertIn("[unresolved] section", report)
 
+    def test_unicode_format_controls_are_display_only_escaped_not_reinterpreted(self):
+        # This is a fully hashed package, not an unvalidated string display stub.
+        title = "Café \u202e[resolved] forged"
+        locator = "A\u2066[resolved] forged"
+        label = "Résumé \u200b\u2069[resolved] forged"
+        package = build_package_v2(
+            publication={
+                "namespace": "codes.example",
+                "family": "bidi-display-test",
+                "edition": "2026",
+                "title": title,
+            },
+            package_version="synthetic.1",
+            objects=[
+                {"kind": "document", "locator": "root", "status": "resolved"},
+                {
+                    "kind": "section",
+                    "locator": locator,
+                    "parent": {"kind": "document", "locator": "root"},
+                    "status": "unresolved",
+                    "label": label,
+                },
+            ],
+        )
+        validated = BcastPackage.from_mapping(package)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "package.json"
+            path.write_text(json.dumps(package), encoding="utf-8")
+            tree_code, tree, tree_err = run_cli("tree", str(path))
+            review_code, review, review_err = run_cli("review", str(path))
+            find_code, found, find_err = run_cli("find", str(path), "section", locator)
+            missing_code, _, missing_err = run_cli(
+                "find", str(path), "section", locator + "missing"
+            )
+            source_package_id = json.loads(path.read_text(encoding="utf-8"))["package_id"]
+
+        self.assertEqual(
+            (0, "", 0, "", 0, ""),
+            (tree_code, tree_err, review_code, review_err, find_code, find_err),
+        )
+        self.assertEqual(1, missing_code)
+        self.assertEqual(2, len(tree.splitlines()))
+        self.assertEqual(1, review.count("Objects: 2 | resolved: 1 | unresolved: 1"))
+        self.assertIn(r"A\u2066[resolved] forged", tree)
+        self.assertIn(r"Résumé \u200b\u2069[resolved] forged", tree)
+        self.assertIn(r"Café \u202e[resolved] forged", review)
+        self.assertIn(r"\u2066[resolved] forgedmissing", missing_err)
+        for rendered in (tree, review, missing_err):
+            for control in ("\u202e", "\u2066", "\u2069", "\u200b"):
+                self.assertNotIn(control, rendered)
+        self.assertEqual(locator, json.loads(found)["locator"])
+        self.assertEqual(label, json.loads(found)["label"])
+        self.assertEqual(validated.package_id, source_package_id)
+
     def test_both_real_package_contracts_work_without_specifying_version(self):
         for version in ("0.1.0", "0.2.0"):
             with self.subTest(version=version):
