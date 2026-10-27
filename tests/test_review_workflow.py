@@ -5,15 +5,18 @@ Synthetic public inputs only. No provider APIs, AI, private corpora or remote se
 
 from __future__ import annotations
 
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from bcast import build_package_v2
+from bcast import BcastPackage, build_package_v2
 from bcast.cli import main as cli_main
+from bcast.server import make_server
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +30,128 @@ def run_cli(*arguments: str) -> tuple[int, str, str]:
     return exit_code, out.getvalue(), err.getvalue()
 
 
+@contextmanager
+def reference_server(package: BcastPackage):
+    server = make_server(
+        [package], host="127.0.0.1", port=0, package_contract=package.schema_version
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}"
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+
+
+@contextmanager
+def hostile_json_server(payload):
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, format, *args):
+            return
+
+        def do_GET(self):
+            raw = json.dumps(payload).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}"
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+
+
 class LocalReviewJourneyTests(unittest.TestCase):
+    def test_remote_reference_api_preserves_local_report_under_both_contracts(self):
+        for version in ("0.1.0", "0.2.0"):
+            with self.subTest(version=version):
+                path = FIXTURES / f"package-{version}.json"
+                package = BcastPackage.load(path)
+                code, local, err = run_cli("review", str(path))
+                self.assertEqual((0, ""), (code, err))
+                with reference_server(package) as base_url:
+                    code, remote, err = run_cli(
+                        "api",
+                        base_url,
+                        "--package-contract",
+                        package.schema_version,
+                        "review",
+                        package.package_id,
+                    )
+                self.assertEqual((0, ""), (code, err))
+                self.assertIn(f"Package ID: {package.package_id}", remote)
+                self.assertEqual(
+                    local.replace("BCAST local package review", "BCAST remote package review"),
+                    remote,
+                )
+
+    def test_remote_corrupt_full_materialization_fails_before_printing_review(self):
+        original = BcastPackage.load(FIXTURES / "package-0.2.0.json")
+        forged = original.as_dict()
+        forged["objects"][1]["content"]["text"] = "Tampered by source"
+        with hostile_json_server(forged) as base_url:
+            code, out, err = run_cli(
+                "api",
+                base_url,
+                "--package-contract",
+                original.schema_version,
+                "review",
+                original.package_id,
+            )
+        self.assertEqual(1, code)
+        self.assertEqual("", out)
+        self.assertIn("public BCAST contract", err)
+
+    def test_remote_wrong_version_fails_without_report(self):
+        original = BcastPackage.load(FIXTURES / "package-0.2.0.json")
+        with reference_server(original) as base_url:
+            code, out, err = run_cli("api", base_url, "review", original.package_id)
+        self.assertEqual(1, code)
+        self.assertEqual("", out)
+        self.assertIn("incompatible contract version", err)
+
+    def test_untrusted_control_characters_cannot_forge_review_rows(self):
+        package = build_package_v2(
+            publication={
+                "namespace": "codes.example",
+                "family": "fictional-terminal-test",
+                "edition": "2026",
+                "title": "Example\n[resolved] forged\x1b[2J",
+            },
+            package_version="synthetic.1",
+            objects=[
+                {"kind": "document", "locator": "root", "status": "resolved"},
+                {
+                    "kind": "section",
+                    "locator": "A\n[verified] forged",
+                    "parent": {"kind": "document", "locator": "root"},
+                    "status": "unresolved",
+                    "label": "Needs review\rObjects: 0\x1b[0m",
+                },
+            ],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "source.json"
+            path.write_text(json.dumps(package), encoding="utf-8")
+            code, report, err = run_cli("review", str(path))
+        self.assertEqual((0, ""), (code, err))
+        self.assertNotIn(chr(27), report)
+        self.assertNotIn("\n[resolved] forged", report)
+        self.assertNotIn("\nObjects: 0", report)
+        self.assertEqual(1, report.count("Objects: 2 | resolved: 1"))
+        self.assertIn(r"\n[verified] forged", report)
+        self.assertIn(r"\rObjects: 0", report)
+        self.assertIn("[unresolved] section", report)
+
     def test_both_real_package_contracts_work_without_specifying_version(self):
         for version in ("0.1.0", "0.2.0"):
             with self.subTest(version=version):

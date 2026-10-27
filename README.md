@@ -184,6 +184,31 @@ bcast api http://127.0.0.1:8001 --package-contract bcast.package/0.2.0 metadata 
 
 Use `BcastApiClient(base_url, package_contract="bcast.package/0.2.0")` for a 0.2.0 deployment. Metadata provides the content-addressed ID, but clients must fetch the full package to verify its digest. The original client and server defaults stay on 0.1.0.
 
+### Review a served package without downloading and wiring JSON manually
+
+The `api review` command uses the **existing** version-selected, read-only
+full-package GET, validates the public contract and exact requested package
+identity, then renders the same structural status report as local `bcast review`.
+It does not introduce another API route or copy provider-specific hierarchies.
+
+With the synthetic local reference server running on port 8001 as above:
+
+```bash
+bcast api http://127.0.0.1:8001 --package-contract bcast.package/0.2.0 \\
+  review bcastpkg:sha256:efa6bd60029237e6a175a2893c10c72abfcbde8149ef2270e6cd3d3fc6a87819
+```
+
+A 0.2.0 review checks the full package materialization digest, not just a metadata
+claim. The legacy 0.1.0 version has a different, non-content-addressed package
+identity, so validation cannot establish exact body integrity under that contract.
+A mismatched version, digest or malformed response fails before printing a partial
+review. Control characters in supplied labels and locators are printed as escaped
+text rather than allowed to rearrange terminal output.
+
+This is a local reference server example, **not** a deployed regulatory service
+or validation of a publisher's text, rights, or jurisdictional applicability.
+
+
 The local reference server is a conformance and integration aid. Its presence does **not** mean that a production BCAST service has been deployed, and it deliberately implements only the four GET operations standardized by `bcast.api/0.1.0`.
 
 ## Validate the public contracts
