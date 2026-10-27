@@ -128,17 +128,17 @@ class LocalReviewJourneyTests(unittest.TestCase):
                 "namespace": "codes.example",
                 "family": "fictional-terminal-test",
                 "edition": "2026",
-                "title": "Example\\n[resolved] forged\\x1b[2J",
+                "title": "Example\n[resolved] forged\x1b[2J",
             },
             package_version="synthetic.1",
             objects=[
                 {"kind": "document", "locator": "root", "status": "resolved"},
                 {
                     "kind": "section",
-                    "locator": "A\\n[verified] forged",
+                    "locator": "A\n[verified] forged",
                     "parent": {"kind": "document", "locator": "root"},
                     "status": "unresolved",
-                    "label": "Needs review\\rObjects: 0\\x1b[0m",
+                    "label": "Needs review\rObjects: 0\x1b[0m",
                 },
             ],
         )
@@ -148,11 +148,11 @@ class LocalReviewJourneyTests(unittest.TestCase):
             code, report, err = run_cli("review", str(path))
         self.assertEqual((0, ""), (code, err))
         self.assertNotIn(chr(27), report)
-        self.assertNotIn("\\n[resolved] forged", report)
-        self.assertNotIn("\\nObjects: 0", report)
+        self.assertNotIn("\n[resolved] forged", report)
+        self.assertNotIn("\nObjects: 0", report)
         self.assertEqual(1, report.count("Objects: 2 | resolved: 1"))
-        self.assertIn(r"\\n[verified] forged", report)
-        self.assertIn(r"\\rObjects: 0", report)
+        self.assertIn(r"\n[verified] forged", report)
+        self.assertIn(r"\rObjects: 0", report)
         self.assertIn("[unresolved] section", report)
 
     def test_both_real_package_contracts_work_without_specifying_version(self):
