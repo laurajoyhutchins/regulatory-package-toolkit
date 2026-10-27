@@ -104,12 +104,13 @@ def _safe_label(value: str) -> str:
     # JSON quotes C0/ASCII controls. Escape remaining nonprintable Unicode,
     # including C1, separators and bidi formatting controls, without changing
     # readable international publication text.
-    return "".join(
-        json.dumps(character, ensure_ascii=True)[1:-1]
-        if not character.isprintable()
-        else character
-        for character in encoded
-    )
+    parts: list[str] = []
+    for character in encoded:
+        if character.isprintable():
+            parts.append(character)
+        else:
+            parts.append(json.dumps(character, ensure_ascii=True)[1:-1])
+    return "".join(parts)
 
 
 def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:
