@@ -1,12 +1,13 @@
 from copy import deepcopy
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
 from bcast.validation import PackageValidationError, load_schema, validate_package
 from conformance.validate import load_json
-from conformance.validate_openapi import validate_openapi_document
+from conformance.validate_openapi import _resolve_reference, validate_openapi_document
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,6 +69,25 @@ class ApiContractTests(unittest.TestCase):
 
     def test_openapi_32_companion_validates_and_resolves_every_reference(self) -> None:
         validate_openapi_document(self.api, API_PATH)
+
+    def test_local_schema_reference_is_loaded_once_for_pointer_and_validation(self) -> None:
+        """The schema checked must be the same bytes used to resolve its pointer."""
+        schema_path = ROOT / "spec" / "schemas" / "package-0.1.0.schema.json"
+        original_read_text = Path.read_text
+        reads = []
+
+        def tracked_read(path, *args, **kwargs):
+            if path.resolve() == schema_path.resolve():
+                reads.append(path)
+            return original_read_text(path, *args, **kwargs)
+
+        with patch.object(Path, "read_text", tracked_read):
+            _resolve_reference(
+                API_PATH,
+                "../schemas/package-0.1.0.schema.json#/properties/objects/items",
+                ROOT,
+            )
+        self.assertEqual(1, len(reads))
 
     def test_invalid_openapi_structure_is_rejected(self) -> None:
         document = deepcopy(self.api)
