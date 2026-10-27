@@ -304,7 +304,9 @@ class LocalReviewJourneyTests(unittest.TestCase):
             tree_code, tree, tree_err = run_cli("tree", str(path))
             review_code, review, review_err = run_cli("review", str(path))
             find_code, found, find_err = run_cli("find", str(path), "section", locator)
-            missing_code, _, missing_err = run_cli("find", str(path), "section", locator + "missing")
+            missing_code, _, missing_err = run_cli(
+                "find", str(path), "section", locator + "missing"
+            )
             source_package_id = json.loads(path.read_text(encoding="utf-8"))["package_id"]
 
         self.assertEqual(
