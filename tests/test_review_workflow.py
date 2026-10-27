@@ -250,7 +250,20 @@ class LocalReviewJourneyTests(unittest.TestCase):
             path = Path(directory) / "source.json"
             path.write_text(json.dumps(package), encoding="utf-8")
             code, report, err = run_cli("review", str(path))
+            tree_code, tree_output, tree_err = run_cli("tree", str(path))
         self.assertEqual((0, ""), (code, err))
+        # Rehashed and fully validated package text must not create forged
+        # terminal rows through either command's human-readable output.
+        self.assertEqual((0, ""), (tree_code, tree_err))
+        self.assertEqual(
+            [
+                "document root",
+                r"  section A\n[verified] forged Needs review\rObjects: 0\u001b[0m",
+            ],
+            tree_output.splitlines(),
+        )
+        self.assertNotIn(chr(27), tree_output)
+        self.assertNotIn("\r", tree_output)
         self.assertNotIn(chr(27), report)
         self.assertNotIn("\n[resolved] forged", report)
         self.assertNotIn("\nObjects: 0", report)
