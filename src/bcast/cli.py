@@ -101,9 +101,12 @@ def _print_json(value) -> None:
 def _safe_label(value: str) -> str:
     """Keep untrusted publication text on one terminal line, never execute controls."""
     encoded = json.dumps(value, ensure_ascii=False)[1:-1]
+    # JSON quotes C0/ASCII controls. Escape remaining nonprintable Unicode,
+    # including C1, separators and bidi formatting controls, without changing
+    # readable international publication text.
     return "".join(
-        f"\\u{ord(character):04x}"
-        if 0x7F <= ord(character) <= 0x9F or character in ("\u2028", "\u2029")
+        json.dumps(character, ensure_ascii=True)[1:-1]
+        if not character.isprintable()
         else character
         for character in encoded
     )
@@ -115,9 +118,9 @@ def _print_tree(package: BcastPackage, *, show_status: bool = False) -> None:
     while pending:
         record, depth = pending.pop()
         label = record.get("label")
-        suffix = f" {_safe_label(label) if show_status else label}" if label else ""
+        suffix = f" {_safe_label(label)}" if label else ""
         status = f"[{record['status']}] " if show_status else ""
-        locator = _safe_label(record["locator"]) if show_status else record["locator"]
+        locator = _safe_label(record["locator"])
         print(f"{'  ' * depth}{status}{record['kind']} {locator}{suffix}")
         pending.extend(
             (child, depth + 1) for child in reversed(package.children(record["object_id"]))
