@@ -1,0 +1,34 @@
+{
+  "schema_version": "bcast.package/0.2.0",
+  "package_version": "synthetic.unicode.1",
+  "publication": {
+    "publication_id": "bcastpub:sha256:d1531202dfc19b6b3c980008b8cc9af60197019ab1ad48492b7dfff440747cc0",
+    "namespace": "codes.example",
+    "family": "unicode-interop-test",
+    "edition": "Édition 2026",
+    "revision": "Révision 1",
+    "title": "Unicode identity interoperability fixture",
+    "issuing_body": "BCAST synthetic fixture"
+  },
+  "objects": [
+    {
+      "object_id": "bcastobj:sha256:b8f18eb4a74e5b7c9165c18054de83d0ab343acead373bfeb6e7438e8751cece",
+      "kind": "document",
+      "locator": "root",
+      "status": "resolved",
+      "label": "Synthetic Unicode publication"
+    },
+    {
+      "object_id": "bcastobj:sha256:c5013dad1a6b819c06d1b993657409047061289f09c2d3850bef83d62eb7dd05",
+      "kind": "section",
+      "locator": "1",
+      "parent_id": "bcastobj:sha256:b8f18eb4a74e5b7c9165c18054de83d0ab343acead373bfeb6e7438e8751cece",
+      "status": "resolved",
+      "content": {
+        "media_type": "text/plain",
+        "text": "Public synthetic interoperability data; no regulatory claim."
+      }
+    }
+  ],
+  "package_id": "bcastpkg:sha256:77a18560eaf39fe9ef723a0d01961b636e548d96a2d3703056cebdceb342fde5"
+}
