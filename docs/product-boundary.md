@@ -55,6 +55,10 @@ A hosted consumer may serve only explicitly authorized packages. A public SDK, s
 
 BCAST represents **what an identified publication contains** and the limits of that representation. Building Code Map determines jurisdictional adoption and project applicability from independent evidence. Arcata performs and verifies engineering calculations. BCAST's `resolved` state is not a BCM `verified` determination, a legal-text certification, or an engineering approval.
 
+## BCM / RSO regulatory evidence cutover note
+
+See [BCAST publication identity versus BCM legal evidence](bcm-regulatory-evidence-consumer-boundary.md). In the planned cutover, private Regulatory Source Operations holds and reviews source-law evidence, amendments and effective dates and produces source-bound regulatory claims; public BCM handles geospatial authority and project applicability through its existing runtime. A source-neutral BCAST package establishes neither enactment nor a verified project verdict. The RSO-to-BCM claim export is a separate JSON Schema + ODCS contract with W3C PROV-O source lineage; it must not change BCAST package semantics or introduce an Overcenter dependency.
+
 ## Current implementation and migration
 
 Today the public repository already owns package contracts, identities, validation, consumers, a CLI and a local read-only reference server. It now provides a reusable `build_package_v2` neutral-input compiler, but not a deployed production application.
