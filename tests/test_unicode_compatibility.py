@@ -21,8 +21,7 @@ from bcast.validation import PackageValidationError
 
 
 FIXTURE = (
-    Path(__file__).resolve().parents[1]
-    / "examples/synthetic/valid/package-0.2.0-unicode.json"
+    Path(__file__).resolve().parents[1] / "examples/synthetic/valid/package-0.2.0-unicode.json"
 )
 
 
@@ -75,9 +74,7 @@ class UnicodeIdentityInteroperabilityTests(unittest.TestCase):
         identity = {
             key: publication[key] for key in ("namespace", "family", "edition", "revision")
         }
-        self.assertEqual(
-            publication["publication_id"], independently_hashed("bcastpub", identity)
-        )
+        self.assertEqual(publication["publication_id"], independently_hashed("bcastpub", identity))
         for obj in package["objects"]:
             coordinates = {
                 "publication_id": publication["publication_id"],
@@ -88,9 +85,7 @@ class UnicodeIdentityInteroperabilityTests(unittest.TestCase):
 
         materialized = {key: value for key, value in package.items() if key != "package_id"}
         materialized["objects"] = sorted(package["objects"], key=lambda obj: obj["object_id"])
-        self.assertEqual(
-            package["package_id"], independently_hashed("bcastpkg", materialized)
-        )
+        self.assertEqual(package["package_id"], independently_hashed("bcastpkg", materialized))
         validate_package(package)
         self.assertEqual(package, BcastPackage.from_mapping(package).as_dict())
 
@@ -132,7 +127,9 @@ class UnicodeIdentityInteroperabilityTests(unittest.TestCase):
     def test_http_reference_server_and_client_preserve_unicode_coordinates(self):
         package = BcastPackage.from_mapping(self.fixture)
         server = make_server(
-            [package], host="127.0.0.1", port=0,
+            [package],
+            host="127.0.0.1",
+            port=0,
             package_contract="bcast.package/0.2.0",
         )
         thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -148,9 +145,7 @@ class UnicodeIdentityInteroperabilityTests(unittest.TestCase):
                 client.get_package_metadata(package.package_id)["publication"]["edition"],
             )
             root = package.roots()[0]
-            self.assertEqual(
-                root, client.get_object(package.package_id, root["object_id"])
-            )
+            self.assertEqual(root, client.get_object(package.package_id, root["object_id"]))
             self.assertEqual(
                 package.children(root["object_id"]),
                 client.get_children(package.package_id, root["object_id"]),
