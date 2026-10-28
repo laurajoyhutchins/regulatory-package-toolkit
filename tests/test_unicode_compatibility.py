@@ -27,9 +27,9 @@ FIXTURE = (
 
 def independently_hashed(prefix: str, value: dict) -> str:
     """Rehash the normative canonical UTF-8 JSON without BCAST's hash helper."""
-    encoded = json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
     return f"{prefix}:sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
@@ -71,9 +71,7 @@ class UnicodeIdentityInteroperabilityTests(unittest.TestCase):
             package["package_id"],
         )
 
-        identity = {
-            key: publication[key] for key in ("namespace", "family", "edition", "revision")
-        }
+        identity = {key: publication[key] for key in ("namespace", "family", "edition", "revision")}
         self.assertEqual(publication["publication_id"], independently_hashed("bcastpub", identity))
         for obj in package["objects"]:
             coordinates = {
