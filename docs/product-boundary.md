@@ -16,7 +16,7 @@ This repository is the sole source of truth for reusable BCAST software and its 
 
 A public software checkout must be testable and useful with synthetic examples and, where rights permit, user-supplied lawful input. It must not need proprietary data, private credentials, or the private repository to pass its ordinary tests.
 
-## Regulatory-data authority: private `regulatory-source-operations`
+## Regulatory-data authority: private `arcata-rso`
 
 The private repository owns acquisition operations and data custody:
 
@@ -54,6 +54,10 @@ A hosted consumer may serve only explicitly authorized packages. A public SDK, s
 ## Product boundaries with BCM and Arcata
 
 BCAST represents **what an identified publication contains** and the limits of that representation. Building Code Map determines jurisdictional adoption and project applicability from independent evidence. Arcata performs and verifies engineering calculations. BCAST's `resolved` state is not a BCM `verified` determination, a legal-text certification, or an engineering approval.
+
+## BCM / RSO regulatory evidence cutover note
+
+See [BCAST publication identity versus BCM legal evidence](bcm-regulatory-evidence-consumer-boundary.md). In the planned cutover, private Regulatory Source Operations holds and reviews source-law evidence, amendments and effective dates and produces source-bound regulatory claims; public BCM handles geospatial authority and project applicability through its existing runtime. A source-neutral BCAST package establishes neither enactment nor a verified project verdict. The RSO-to-BCM claim export is a separate JSON Schema + ODCS contract with W3C PROV-O source lineage; it must not change BCAST package semantics or introduce an Overcenter dependency.
 
 ## Current implementation and migration
 
