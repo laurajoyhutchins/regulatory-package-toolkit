@@ -1,6 +1,6 @@
 # BCAST publication identity versus BCM legal evidence
 
-Status: boundary clarification for the cross-repository BCM cutover prepared 2026-10-28; no new public BCAST format or source release is proposed. See [public BCM #41](https://github.com/laurajoyhutchins/building-code-map/issues/41) and [RSO #77](https://github.com/laurajoyhutchins/regulatory-source-operations/issues/77).
+Status: boundary clarification for the cross-repository BCM cutover prepared 2026-10-28; no new public BCAST format or source release is proposed. See [public BCM #41](https://github.com/laurajoyhutchins/building-code-map/issues/41) and [RSO #77](https://github.com/laurajoyhutchins/arcata-rso/issues/77).
 
 ## Stable separation of concerns
 
