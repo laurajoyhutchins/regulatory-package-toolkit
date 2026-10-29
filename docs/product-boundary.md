@@ -16,7 +16,7 @@ This repository is the sole source of truth for reusable BCAST software and its 
 
 A public software checkout must be testable and useful with synthetic examples and, where rights permit, user-supplied lawful input. It must not need proprietary data, private credentials, or the private repository to pass its ordinary tests.
 
-## Regulatory-data authority: private `regulatory-source-operations`
+## Regulatory-data authority: private `arcata-rso`
 
 The private repository owns acquisition operations and data custody:
 
